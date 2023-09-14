@@ -13,3 +13,7 @@
 You have a Question or an Idea but dont know how to implement it? Just start a Discussion or message me!
 **Email:** contact.justmindful@gmail.com
 **Discord:** justmindfulyt
+
+# ToDo:
+ - Change KEYWORDS
+ - Change Class : Function -> Function : Execute -> RTError : Errormessage
