@@ -1,65 +1,62 @@
-# Parser
+statements  : NEWLINE* statement (NEWLINE+ statement)* NEWLINE*
 
-expr : KEYWORD:var IDENTIFIER EQ expr
-     : comp-expr ((KEYWORD:AND|KEYWORD:OR) comp-expr)*
+statement		: KEYWORD:Return expr?
+						: KEYWORD:Continue
+						: KEYWORD:Break
+						: expr
 
-comp-expr : NOT comp-expr
-          : arith-expr ((EE|LT|GT|LTE|GTE) arith-expr)*
+expr        : KEYWORD:Var IDENTIFIER EQ expr
+            : comp-expr ((KEYWORD:And|KEYWORD:Or) comp-expr)*
 
-arith-expr : term ((PLUS|MINUS) term)*
+comp-expr   : NOT comp-expr
+            : arith-expr ((EE|LT|GT|LTE|GTE) arith-expr)*
 
-term : factor ((MUL|DIV) factor)*
+arith-expr  :	term ((PLUS|MINUS) term)*
 
-factor : (PLUS|MINUS) factor
-       : power
+term        : factor ((MUL|DIV) factor)*
 
-power : call ((POW) factor)*
+factor      : (PLUS|MINUS) factor
+            : power
 
-call : atom (LPAREN (expr (COMMA expr)*)? RPAREN)?
+power       : call (POW factor)*
 
-atom : INT|FLOAT|STRING|IDENTIFIER
-     : LPAREN expr RPAREN
-     : list-expr
-     : if-expr
-     : for-expr
-     : while-expr
-     : func-def
+call        : atom (LPAREN (expr (COMMA expr)*)? RPAREN)?
 
-list-expr : LSQUARE (expr (COMMA expr)*)? RSQUARE
+atom        : INT|FLOAT|STRING|IDENTIFIER
+            : LPAREN expr RPAREN
+            : list-expr
+            : if-expr
+            : for-expr
+            : while-expr
+            : func-def
 
-if-expr : KEYWORD:IF expr KEYWORD:THEN expr
-          (KEYWORD:ELIF expr KEYWORD:THEN expr)*
-          (KEYWORD:ELSE expr)?
+list-expr   : LSQUARE (expr (COMMA expr)*)? RSQUARE
 
-for-expr : KEYWORD:FOR IDENTIFIER EQ expr KEYWORD:TO expr
-           (KEYWORD:STEP expr)? KEYWORD:THEN expr
+if-expr     : KEYWORD:If expr KEYWORD:Then
+              (statement if-expr-b|if-expr-c?)
+            | (NEWLINE statements KEYWORD:End|if-expr-b|if-expr-c)
 
-while-expr : KEYWORD:WHILE expr KEYWORD:THEN expr
+if-expr-b   : KEYWORD:Elif expr KEYWORD:Then
+              (statement if-expr-b|if-expr-c?)
+            | (NEWLINE statements KEYWORD:End|if-expr-b|if-expr-c)
 
-func-def :KEYWORD:FUN IDENTIFIER?
-          LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN
-          ARROW expr
+if-expr-c   : KEYWORD:Else
+              statement
+            | (NEWLINE statements KEYWORD:End)
+
+for-expr    : KEYWORD:For IDENTIFIER EQ expr KEYWORD:To expr 
+              (KEYWORD:Step expr)? KEYWORD:Then
+              statement
+            | (NEWLINE statements KEYWORD:End)
+
+while-expr  : KEYWORD:While expr KEYWORD:Then
+              statement
+            | (NEWLINE statements KEYWORD:End)
+
+func-def    : KEYWORD:Function IDENTIFIER?
+              LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN
+              (ARROW expr)
+            | (NEWLINE statements KEYWORD:End)
 
 * = Zero or More
 ? = Optional
-
-# Other Stuff
-**List**
-LBRACKET (IDENTIFIER (COMMA IDENTIFIER)*)? RBRACKET
-
-+ = append(INT|FLOAT|STRING|IDENTIFIER)
-- = remove(INT:INDEX)
-* = append_list(LIST)
-/ = get(INT:INDEX)
-
-[]
-[1, 2, 3, 4, 5]
-
-[1, 2, 3] + 4 => [1, 2, 3, 4]
-[1, 2, 3] * [4, 5, 6] => [1, 2, 3, 4, 5, 6]
-[1, 2, 3] - 0 => [1, 2]
-[1, 2, 3] - 1 => [1, 3]
-[1, 2, 3] - -1 => [1, 2]
-[1, 2, 3] / 0 =>  1
-[1, 2, 3] / 1 => 2
-[1, 2, 3] / -1 => 3
