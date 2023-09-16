@@ -1520,6 +1520,16 @@ class String(Value):
     copy.set_pos(self.pos_start, self.pos_end)
     copy.set_context(self.context)
     return copy
+  
+  def has(self, other):
+    if isinstance(other, String):
+      result = self.value.find(other)
+      if result == -1:
+        return Number.false, None
+      else:
+        return Number.true, None
+    else:
+      return None, Value.illegal_operation(self, other)
 
   def __str__(self):
     return self.value
@@ -1826,6 +1836,13 @@ class BuiltInFunction(BaseFunction):
       return RTResult().failure(RTError(
         self.pos_start, self.pos_end,
         "Argument must be string",
+        exec_ctx
+      ))
+    
+    if fn.value.find('.mind') == -1:
+      return RTResult().failure(RTError(
+        self.pos_start, self.pos_end,
+        "The file extension must be .mind",
         exec_ctx
       ))
 
