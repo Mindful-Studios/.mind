@@ -17,3 +17,4 @@ You have a Question or an Idea but dont know how to implement it? Just start a D
 # ToDo:
  - Change KEYWORDS
  - Change Class : Function -> Function : Execute -> RTError : Errormessage
+ - Add more Built-In functions
