@@ -112,6 +112,8 @@ TT_LPAREN   	= 'LPAREN'
 TT_RPAREN   	= 'RPAREN'
 TT_LSQUARE    = 'LSQUARE'
 TT_RSQUARE    = 'RSQUARE'
+TT_LROUND = 'LROUND'
+TT_RROUND = 'RROUND'
 TT_EE					= 'EE'
 TT_NE					= 'NE'
 TT_LT					= 'LT'
@@ -135,7 +137,7 @@ KEYWORDS = [
   'To',
   'Step',
   'While',
-  'Fun',
+  'Function',
   'Then',
   'End',
   'Return',
@@ -200,7 +202,7 @@ class Lexer:
         tokens.append(Token(TT_PLUS, pos_start=self.pos))
         self.advance()
       elif self.current_char == '-':
-        tokens.append(self.make_minus_or_arrow())
+        tokens.append(Token(TT_MINUS, pos_start=self.pos))
       elif self.current_char == '*':
         tokens.append(Token(TT_MUL, pos_start=self.pos))
         self.advance()
@@ -221,6 +223,12 @@ class Lexer:
         self.advance()
       elif self.current_char == ']':
         tokens.append(Token(TT_RSQUARE, pos_start=self.pos))
+        self.advance()
+      elif self.current_char == '{':
+        tokens.append(Token(TT_LROUND, pos_start=self.pos))
+        self.advance()
+      elif self.current_char == '}':
+        tokens.append(Token(TT_RROUND, pos_start=self.pos))
         self.advance()
       elif self.current_char == '!':
         token, error = self.make_not_equals()
@@ -296,17 +304,6 @@ class Lexer:
 
     tok_type = TT_KEYWORD if id_str in KEYWORDS else TT_IDENTIFIER
     return Token(tok_type, id_str, pos_start, self.pos)
-
-  def make_minus_or_arrow(self):
-    tok_type = TT_MINUS
-    pos_start = self.pos.copy()
-    self.advance()
-
-    if self.current_char == '>':
-      self.advance()
-      tok_type = TT_ARROW
-
-    return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
 
   def make_not_equals(self):
     pos_start = self.pos.copy()
@@ -486,6 +483,11 @@ class CallNode:
     else:
       self.pos_end = self.node_to_call.pos_end
 
+class ClassNode:
+	def __init__(self, name):
+		self.name = name
+		
+
 class ReturnNode:
   def __init__(self, node_to_return, pos_start, pos_end):
     self.node_to_return = node_to_return
@@ -566,7 +568,7 @@ class Parser:
 
   def parse(self):
     res = self.statements()
-    if not res.error and self.current_tok.type != TT_EOF:
+    iunc not res.error and self.current_tok.type != TT_EOF:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
         "Token cannot appear after previous tokens"
@@ -1041,10 +1043,10 @@ class Parser:
     else:
       step_value = None
 
-    if not self.current_tok.matches(TT_KEYWORD, 'Then'):
+    if not self.current_tok.type == TT_LROUND:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'Then'"
+        "Expected '{'"
       ))
 
     res.register_advancement()
@@ -1057,10 +1059,10 @@ class Parser:
       body = res.register(self.statements())
       if res.error: return res
 
-      if not self.current_tok.matches(TT_KEYWORD, 'End'):
+      if not self.current_tok.type == TT_RROUND:
         return res.failure(InvalidSyntaxError(
           self.current_tok.pos_start, self.current_tok.pos_end,
-          f"Expected 'End'"
+          "Expected '}'"
         ))
 
       res.register_advancement()
@@ -1088,10 +1090,10 @@ class Parser:
     condition = res.register(self.expr())
     if res.error: return res
 
-    if not self.current_tok.matches(TT_KEYWORD, 'Then'):
+    if not self.current_tok.type == TT_LROUND:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'Then'"
+        "Expected '{'"
       ))
 
     res.register_advancement()
@@ -1104,10 +1106,10 @@ class Parser:
       body = res.register(self.statements())
       if res.error: return res
 
-      if not self.current_tok.matches(TT_KEYWORD, 'End'):
+      if not self.current_tok.type == TT_RROUND:
         return res.failure(InvalidSyntaxError(
           self.current_tok.pos_start, self.current_tok.pos_end,
-          f"Expected 'End'"
+          "Expected '}'"
         ))
 
       res.register_advancement()
@@ -1187,24 +1189,24 @@ class Parser:
     res.register_advancement()
     self.advance()
 
-    if self.current_tok.type == TT_ARROW:
-      res.register_advancement()
-      self.advance()
+#    if self.current_tok.type == TT_ARROW:
+#      res.register_advancement()
+#      self.advance()
 
-      body = res.register(self.expr())
-      if res.error: return res
+#      body = res.register(self.expr())
+#      if res.error: return res
 
-      return res.success(FuncDefNode(
-        var_name_tok,
-        arg_name_toks,
-        body,
-        True
-      ))
+#      return res.success(FuncDefNode(
+#        var_name_tok,
+#        arg_name_toks,
+#        body,
+#        True
+#      ))
     
-    if self.current_tok.type != TT_NEWLINE:
+    if not self.current_tok.type == TT_LROUND:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected '->' or NEWLINE"
+        "Expected '{'"
       ))
 
     res.register_advancement()
@@ -1213,10 +1215,10 @@ class Parser:
     body = res.register(self.statements())
     if res.error: return res
 
-    if not self.current_tok.matches(TT_KEYWORD, 'End'):
+    if not self.current_tok.type == TT_RROUND:
       return res.failure(InvalidSyntaxError(
         self.current_tok.pos_start, self.current_tok.pos_end,
-        f"Expected 'End'"
+        "Expected '}'"
       ))
 
     res.register_advancement()
